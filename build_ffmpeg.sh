@@ -6,6 +6,7 @@ API=21
 
 NDK=$ANDROID_NDK_HOME 
 TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64
+EXTRA_CONFIG=""
 
 if [ "$ABI" = "arm64-v8a" ]; then
     FFMPEG_ARCH="aarch64"
@@ -17,6 +18,17 @@ elif [ "$ABI" = "armeabi-v7a" ]; then
     TARGET="armv7a-linux-androideabi"
     CPU="armv7-a"
     EXTRA_CFLAGS="-Os -fPIC"
+elif [ "$ABI" = "x86_64" ]; then
+    FFMPEG_ARCH="x86_64"
+    TARGET="x86_64-linux-android"
+    CPU="x86-64"
+    EXTRA_CFLAGS="-Os -fPIC"
+elif [ "$ABI" = "x86" ]; then
+    FFMPEG_ARCH="x86"
+    TARGET="i686-linux-android"
+    CPU="i686"
+    EXTRA_CFLAGS="-Os -fPIC"
+    EXTRA_CONFIG="--disable-asm" 
 else
     echo "ABI not supported"
     exit 1
@@ -42,6 +54,7 @@ echo "Building FFmpeg for $ABI ($FFMPEG_ARCH)..."
     --strip=$STRIP \
     --sysroot=$TOOLCHAIN/sysroot \
     --extra-cflags="$EXTRA_CFLAGS" \
+    $EXTRA_CONFIG \
     --disable-everything \
     --disable-static \
     --enable-shared \
