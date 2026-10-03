@@ -1,0 +1,44 @@
+name: Build Glossy FFmpeg Engine
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: # Button se manually run karne ke liye
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Clone FFmpeg Source Code
+        run: git clone --branch n6.1.1 --depth 1 https://git.ffmpeg.org/ffmpeg.git
+
+      - name: Make Build Script Executable
+        run: chmod +x build_ffmpeg.sh
+
+      - name: Compile for arm64-v8a (64-bit)
+        run: |
+          cd ffmpeg
+          ../build_ffmpeg.sh arm64-v8a
+
+      - name: Compile for armeabi-v7a (32-bit)
+        run: |
+          cd ffmpeg
+          ../build_ffmpeg.sh armeabi-v7a
+
+      - name: Package jniLibs
+        run: |
+          mkdir -p release-libs/jniLibs/arm64-v8a
+          mkdir -p release-libs/jniLibs/armeabi-v7a
+          cp -r output/arm64-v8a/lib/*.so release-libs/jniLibs/arm64-v8a/
+          cp -r output/armeabi-v7a/lib/*.so release-libs/jniLibs/armeabi-v7a/
+          cd release-libs
+          zip -r ffmpeg-glossy.zip jniLibs
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-glossy-libraries
+          path: release-libs/ffmpeg-glossy.zip
