@@ -51,6 +51,8 @@ echo "Building FFmpeg for $ABI ($FFMPEG_ARCH)..."
     --disable-swscale \
     --disable-postproc \
     --disable-network \
+    --disable-hwaccels \
+    --disable-vulkan \
     --enable-avcodec \
     --enable-avformat \
     --enable-avutil \
