@@ -1,38 +1,38 @@
 #!/bin/bash
-set -e # Yeh line ensure karegi ki agar error aaye toh script wahi ruk jaye
+set -e 
 
-ARCH=$1
+ABI=$1
 API=21
 
-# GitHub Actions ka standard NDK path
 NDK=$ANDROID_NDK_HOME 
 TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64
 
-if [ "$ARCH" = "arm64-v8a" ]; then
+if [ "$ABI" = "arm64-v8a" ]; then
+    FFMPEG_ARCH="aarch64"
     TARGET="aarch64-linux-android"
     CPU="armv8-a"
-    EXTRA_CFLAGS="-Os -fPIC" # Android ke liye zaroori flag
-elif [ "$ARCH" = "armeabi-v7a" ]; then
+    EXTRA_CFLAGS="-Os -fPIC"
+elif [ "$ABI" = "armeabi-v7a" ]; then
+    FFMPEG_ARCH="arm"
     TARGET="armv7a-linux-androideabi"
     CPU="armv7-a"
     EXTRA_CFLAGS="-Os -fPIC"
 else
-    echo "Architecture not supported"
+    echo "ABI not supported"
     exit 1
 fi
 
-# Modern NDK tools manually define karna zaroori hai
 CC="$TOOLCHAIN/bin/${TARGET}${API}-clang"
 CXX="$TOOLCHAIN/bin/${TARGET}${API}-clang++"
 AR="$TOOLCHAIN/bin/llvm-ar"
 NM="$TOOLCHAIN/bin/llvm-nm"
 STRIP="$TOOLCHAIN/bin/llvm-strip"
 
-echo "Building FFmpeg for $ARCH..."
+echo "Building FFmpeg for $ABI ($FFMPEG_ARCH)..."
 
 ./configure \
     --target-os=android \
-    --architecture=$ARCH \
+    --arch=$FFMPEG_ARCH \
     --cpu=$CPU \
     --enable-cross-compile \
     --cc=$CC \
@@ -60,10 +60,10 @@ echo "Building FFmpeg for $ARCH..."
     --enable-parser=aac,flac,mpegaudio,opus,vorbis \
     --enable-protocol=file \
     --enable-small \
-    --prefix=../output/$ARCH || { echo "Configure failed! Checking config.log..."; cat ffbuild/config.log; exit 1; }
+    --prefix=../output/$ABI || { echo "Configure failed!"; cat ffbuild/config.log; exit 1; }
 
 make clean
 make -j$(nproc)
 make install
 
-echo "Build complete for $ARCH!"
+echo "Build complete for $ABI!"
