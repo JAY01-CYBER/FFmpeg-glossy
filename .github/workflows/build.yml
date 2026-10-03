@@ -30,18 +30,24 @@ jobs:
       - name: Compile for x86
         run: cd ffmpeg && ../build_ffmpeg.sh x86
 
-      - name: Package jniLibs
+      - name: Package jniLibs and Headers
         run: |
           mkdir -p release-libs/jniLibs/arm64-v8a
           mkdir -p release-libs/jniLibs/armeabi-v7a
           mkdir -p release-libs/jniLibs/x86_64
           mkdir -p release-libs/jniLibs/x86
+          
+          # .so files copy kar rahe hain
           cp -r output/arm64-v8a/lib/*.so release-libs/jniLibs/arm64-v8a/
           cp -r output/armeabi-v7a/lib/*.so release-libs/jniLibs/armeabi-v7a/
           cp -r output/x86_64/lib/*.so release-libs/jniLibs/x86_64/
           cp -r output/x86/lib/*.so release-libs/jniLibs/x86/
+          
+          # FFmpeg ke headers (include folder) copy kar rahe hain
+          cp -r output/arm64-v8a/include release-libs/
+          
           cd release-libs
-          zip -r ffmpeg-glossy.zip jniLibs
+          zip -r ffmpeg-glossy.zip jniLibs include
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
