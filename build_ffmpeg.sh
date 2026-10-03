@@ -1,25 +1,32 @@
 #!/bin/bash
-ARCH=$1
-API=21 # Minimum Android API level
+set -e # Yeh line ensure karegi ki agar error aaye toh script wahi ruk jaye
 
-# GitHub Actions me ANDROID_NDK_LATEST_HOME automatic set hota hai
-NDK=$ANDROID_NDK_LATEST_HOME 
+ARCH=$1
+API=21
+
+# GitHub Actions ka standard NDK path
+NDK=$ANDROID_NDK_HOME 
 TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64
 
-# Architecture setup
 if [ "$ARCH" = "arm64-v8a" ]; then
     TARGET="aarch64-linux-android"
     CPU="armv8-a"
+    EXTRA_CFLAGS="-Os -fPIC" # Android ke liye zaroori flag
 elif [ "$ARCH" = "armeabi-v7a" ]; then
     TARGET="armv7a-linux-androideabi"
     CPU="armv7-a"
+    EXTRA_CFLAGS="-Os -fPIC"
 else
     echo "Architecture not supported"
     exit 1
 fi
 
+# Modern NDK tools manually define karna zaroori hai
 CC="$TOOLCHAIN/bin/${TARGET}${API}-clang"
 CXX="$TOOLCHAIN/bin/${TARGET}${API}-clang++"
+AR="$TOOLCHAIN/bin/llvm-ar"
+NM="$TOOLCHAIN/bin/llvm-nm"
+STRIP="$TOOLCHAIN/bin/llvm-strip"
 
 echo "Building FFmpeg for $ARCH..."
 
@@ -30,7 +37,11 @@ echo "Building FFmpeg for $ARCH..."
     --enable-cross-compile \
     --cc=$CC \
     --cxx=$CXX \
+    --ar=$AR \
+    --nm=$NM \
+    --strip=$STRIP \
     --sysroot=$TOOLCHAIN/sysroot \
+    --extra-cflags="$EXTRA_CFLAGS" \
     --disable-everything \
     --disable-static \
     --enable-shared \
@@ -49,7 +60,7 @@ echo "Building FFmpeg for $ARCH..."
     --enable-parser=aac,flac,mpegaudio,opus,vorbis \
     --enable-protocol=file \
     --enable-small \
-    --prefix=../output/$ARCH
+    --prefix=../output/$ARCH || { echo "Configure failed! Checking config.log..."; cat ffbuild/config.log; exit 1; }
 
 make clean
 make -j$(nproc)
